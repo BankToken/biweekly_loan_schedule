@@ -1,72 +1,82 @@
 drop package pkg_secval
 /
+drop table pmt_schedule
+/
+drop table loan_discrate
+/
+drop table loan_secvalue
+/
+drop table loan_secvalue_log 
+/
+drop sequence id_pmt_seq;
+/
+drop sequence id_loan_disc_rate_seq ;
+/
+drop sequence id_loan_sec_val_seq ;
+/
+drop sequence id_loan_sec_val_seq_log ;
+/
 
-DROP TABLE PMTSCHEDULE
-/
-DROP TABLE LOANDISCRATE
-/
-DROP TABLE LOAN_SECVALUE
-/
-DROP TABLE LOAN_SECVALUE_LOG 
-/
-DROP sequence id_pmt_seq;
-/
-DROP sequence id_loan_disc_rate_seq ;
-/
-DROP sequence id_loan_sec_val_seq ;
-/
-DROP sequence id_loan_sec_val_seq_log ;
-/
-
-CREATE TABLE PMTSCHEDULE 
-(ID_PMT NUMBER(10)  PRIMARY KEY , 
- LOANACCTNUMBER VARCHAR(20),
- CALCPERIOD DATE, 
- PMTNBR NUMBER(10), 
- CURRENT_PMT_DUE_DT  DATE, 
- MOPMT  NUMBER(18,4), 
- PCD_ACT_D DATE ,
- DTM_CREATED DATE  DEFAULT SYSDATE,
- DTM_MODIFIED DATE  DEFAULT SYSDATE 
+create table pmt_schedule 
+(id_pmt number(10)  primary key , 
+ loanacctnumber varchar(20) not null,
+ calcperiod date not null, 
+ pmtnbr number(10) not null, 
+ current_pmt_due_dt  date, 
+ mopmt  number(18,4) not null, 
+ pcd_act_d date not null,
+ record_create_date date  default sysdate,
+ record_modified_date date  default sysdate 
 )
 /
 
+alter table pmt_schedule add constraint pmt_schedule_uk#acct#pmtnmr unique ( loanacctnumber, pmtnbr )
+/
 
 
-CREATE TABLE LOANDISCRATE 
+create table loan_discrate 
 (
-ID_LOAN_DISC_RATE NUMBER(10),
-LOANACCTNUMBER VARCHAR(20), 
-CALCPERIOD DATE, 
-DISCOUNTRATE NUMBER(18, 15),
- DTM_CREATED DATE  DEFAULT SYSDATE,
- DTM_MODIFIED DATE  DEFAULT SYSDATE
+id_loan_disc_rate number(10) primary key,
+loanacctnumber varchar(20) not null, 
+calcperiod date not null, 
+discountrate number(18, 15) not null,
+record_create_date date  default sysdate,
+record_modified_date date  default sysdate
 )
 /
 
-CREATE TABLE LOAN_SECVALUE 
+create table loan_secvalue 
 (
-id_loan_sec_val number(10),
-loanacctnumber varchar(20), 
-calcperiod date, 
-secval number(18, 4),
-dtm_created date  default sysdate,
-dtm_modified date  default sysdate
+id_loan_sec_val number(10) primary key,
+loanacctnumber varchar(20) not null, 
+calcperiod date not null, 
+secval number(18, 4) ,
+record_create_date date  default sysdate,
+record_modified_date date  default sysdate,
+record_modified_by varchar2(200) default user
 )
 /
 
-CREATE TABLE LOAN_SECVALUE_LOG 
+create table loan_secvalue_log 
 (
-id_loan_sec_val_LOG number(10) primary key ,
+id_loan_sec_val_log number(10) primary key ,
 log_timestamp timestamp default systimestamp ,
-operation_type varchar2(1) constraint chk_op_typ  CHECK  (operation_type in ('I','U','D')),
-id_loan_sec_val number(10),
-LOANACCTNUMBER VARCHAR(20), 
-CALCPERIOD DATE, 
-SECVAL NUMBER(18, 4)
+record_modified_by varchar2(200) ,
+operation_type varchar2(1) constraint chk_op_typ  check  (operation_type in ('I','U','D')),
+id_loan_sec_val number(10) not null,
+loanacctnumber varchar(20) not null, 
+calcperiod date not null, 
+secval number(18, 4)
 )
 /
 
+create table process_log
+(
+log_timestamp timestamp default systimestamp ,
+log varchar2(1000),
+error_msg varchar2(4000)
+)
+/
 
 --sequences
 create sequence id_pmt_seq start with 1 increment by 1
@@ -78,165 +88,113 @@ create sequence id_loan_sec_val_seq start with 1 increment by 1
 create sequence id_loan_sec_val_seq_log start with 1 increment by 1
 /
 
+--CREATE A NON UNINUE, NON CLUSTERED INDEX ON CALCPERIOD
+create index idx_pmtsched_calcprd on pmt_schedule ( calcperiod );
+
+create index idx_pmtsched_acctnbr on pmt_schedule ( loanacctnumber );
+
+
+
 --log triggers
-CREATE OR REPLACE TRIGGER trg_loandiscrate_log_upd_date
-BEFORE INSERT OR UPDATE
-ON LOANDISCRATE
-REFERENCING NEW AS New OLD AS Old
-FOR EACH ROW
+create or replace trigger trg_loan_discrate_log_upd_date
+before insert or update
+on loan_discrate
+referencing new as new old as old
+for each row
 begin
 
-  :new.ID_LOAN_DISC_RATE := ID_LOAN_DISC_RATE_SEQ.nextval;
- :new.dtm_modified := sysdate;
-end;
-/
-CREATE OR REPLACE TRIGGER trg_pmtsched_log_upd_date
-BEFORE INSERT OR UPDATE
-ON PMTSCHEDULE
-REFERENCING NEW AS New OLD AS Old
-FOR EACH ROW
-begin
-:new.ID_PMT := id_pmt_seq.nextval;
- :new.dtm_modified := sysdate;
+  :new.id_loan_disc_rate := id_loan_disc_rate_seq.nextval;
+ :new.record_modified_date := sysdate;
 end;
 /
 
-CREATE OR REPLACE TRIGGER trg_secval_defaults
-BEFORE INSERT OR UPDATE
-ON LOAN_SECVALUE    
-REFERENCING NEW AS New OLD AS Old
-FOR EACH ROW
+
+create or replace trigger trg_pmtsched_log_upd_date
+before insert or update
+on pmt_schedule
+referencing new as new old as old
+for each row
+begin
+:new.id_pmt := id_pmt_seq.nextval;
+ :new.record_modified_date := sysdate;
+end;
+/
+
+create or replace trigger trg_secval_defaults
+before insert or update
+on loan_secvalue    
+referencing new as new old as old
+for each row
 begin
 
 :new.id_loan_sec_val := id_loan_sec_val_seq.nextval ;
-:new.dtm_modified := sysdate;
+:new.record_modified_date := sysdate;
 
 end;
 /
 
-CREATE OR REPLACE TRIGGER trg_log_secval_changes
-AFTER INSERT OR UPDATE OR DELETE
-ON LOAN_SECVALUE    
-REFERENCING NEW AS New OLD AS Old
-FOR EACH ROW
-DECLARE
+create or replace trigger trg_log_secval_changes
+after insert or update or delete
+on loan_secvalue    
+referencing new as new old as old
+for each row
+declare
 v_op_type varchar2(1);
 begin
 
-    if ( inserting ) then
-        v_op_type := 'I';
-    elsif ( updating ) then 
-        v_op_type := 'U';
-    elsif deleting then
-        v_op_type := 'D';
+    if ( inserting ) then  v_op_type := 'I';
+    elsif ( updating ) then v_op_type := 'U';
+    elsif deleting then  v_op_type := 'D';
     end if;
     
     
-    If  ( v_op_type = 'D' ) then
-    insert into loan_secvalue_log 
-    (
-    id_loan_sec_val_log,
-    operation_type,
-    id_loan_sec_val,
-    loanacctnumber,
-    calcperiod,
-    secval
-    ) values
-    ( id_loan_sec_val_seq_log.nextval,
-       v_op_type,
-       :old.id_loan_sec_val,
-       :old.loanacctnumber,
-       :old.calcperiod,
-       :old.secval
-    );
-    
+    if  ( v_op_type = 'D' ) then
+       
+       insert into loan_secvalue_log  ( id_loan_sec_val_log, operation_type, id_loan_sec_val, loanacctnumber,  calcperiod, secval ,record_modified_by) values
+        ( id_loan_sec_val_seq_log.nextval,  v_op_type, :old.id_loan_sec_val,:old.loanacctnumber, :old.calcperiod, :old.secval ,:old.record_modified_by);
+            
     elsif ( v_op_type = 'I' or v_op_type = 'U' ) then
-    insert into loan_secvalue_log 
-    (
-    id_loan_sec_val_log,
-    operation_type,
-    id_loan_sec_val,
-    loanacctnumber,
-    calcperiod,
-    secval
-    ) values
-    ( id_loan_sec_val_seq_log.nextval,
-       v_op_type,
-       :new.id_loan_sec_val,
-       :new.loanacctnumber,
-       :new.calcperiod,
-       :new.secval
-    );
-    
+       
+        insert into loan_secvalue_log (id_loan_sec_val_log, operation_type, id_loan_sec_val, loanacctnumber, calcperiod, secval ,record_modified_by) values
+        ( id_loan_sec_val_seq_log.nextval, v_op_type, :new.id_loan_sec_val, :new.loanacctnumber,:new.calcperiod,:new.secval ,:new.record_modified_by);
+            
     end if;
 
 end;
 /
 
 
+----TEMP TABLE---
 
---Load Data into PMTSCHEDULE , first loan
+DROP TABLE LOANPMT_CASH_FLOW CASCADE CONSTRAINTS;
 
-truncate table pmtschedule
-/
-truncate table loandiscrate
-/
-
-exec pkg_secval.add_loan_schedule ( 'ACCT01_LOAN01',424.89, 14,'8/3/2015',1.7,4.108 );
-
-exec pkg_secval.add_loan_schedule ( 'ACCT02_LOAN02',530.25, 14,'8/3/2015',25.89,3.3110 );
-
-
-
-exec calclate_secval('8/1/2015');
-
-
-
---CREATE A NON UNINUE, NON CLUSTERED INDEX ON CALCPERIOD
-CREATE INDEX IDX_PMTSCHED_CALCPRD ON PMTSCHEDULE ( CALCPERIOD );
+CREATE GLOBAL TEMPORARY TABLE LOANPMT_CASH_FLOW
+(
+  LOANACCTNUMBER  VARCHAR2(20 BYTE)                 NULL,
+  NBR_MOS         NUMBER(10)                        NULL,
+  calcperiod      DATE                              NULL,
+  CASH_FLOW       NUMBER(18,4)                      NULL,
+  DISCOUNTRATE    NUMBER(18,4)                      NULL,
+  PV              NUMBER(18,4)                      NULL
+)
+ON COMMIT PRESERVE ROWS;
 
 
 
+DROP TABLE GTT_LOANPMT_CASH_FLOW CASCADE CONSTRAINTS;
 
-/*
-CalcPeriod in both tables represents the end of each month. New Payment schedule comes in every month and 
-we need to recalculate secvalue every month based on the new schedule and save results for the month.
-Please create stored procedure in MS SQL or Oracle which will have one parameter: CalcPeriod (e.g. ‘07/31/2017’)
-
-Based on that parameter stored procedure will retrieve the data from PmtSchedule table, calculate SecValue for each loan and save it to the Loan_SecValue.
-User should be able to rerun SP for the same CalcPeriod many times
-
-Please add to the tables all the required indexes and keys. You can add extra columns if you need them for the indexes and keys. The application should be able to work with millions of loans. Each loan can have up to 60 payments in the schedule.
-*/
-
-
-
---Assumption/ 
---Each month, You get loan payment schedules for remaining paments only, Hence Secval will be calculated today, for future cash flows only
---Secvalue will not be calculated for entire payment schedule ( from first payment, which was paid in the past,  to last payment )
---for example, for a Loan with payment terms of 60 monthly payments,  from Jan 2015 to  Dec 2020,  you get new loan schedule today (i.e. 9/30/2017 ), SecVal will be calculated for payments from Sept 2017 to Dec 2020
---
-
---Logic
--- Take given parameter pi_calc_period
--- and find all loan schedules having that calcPeriod ( This is assumption )
--- and calculate Secval for each of those loans ( FOR ENTIRE SCHEDULE , not only upto current date )
---
- 
-
-  
-  /*
-  
-  select * from PMTSCHEDULE ORDER BY 2,4;
-
-select * from loandiscrate ORDER BY 2,3;
-
-select * from  LoanPmt_cash_flow order by 1,2
-
-select * from LOAN_SECVALUE
-
-select * from LOAN_SECVALUE_log order by loanacctnumber , 2 desc
+CREATE GLOBAL TEMPORARY TABLE GTT_LOANPMT_CASH_FLOW
+(
+  calc_period     date,
+  LOANACCTNUMBER  VARCHAR2(20 BYTE)                 NULL,
+  NBR_MOS         NUMBER(10)                        NULL,
+  calendar_month  DATE                              NULL,
+  CASH_FLOW       NUMBER(18,4)                      NULL,
+  DISCOUNTRATE    NUMBER(18,4)                      NULL,
+  PV              NUMBER(18,4)                      NULL
+)
+ON COMMIT PRESERVE ROWS;
 
 
-  
-  */
+--select * from LOANPMT_CASH_FLOW
+
