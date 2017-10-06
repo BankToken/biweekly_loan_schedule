@@ -51,7 +51,7 @@ commit;
 end;
 
 --Assumption/ 
---Each month, You get loan payment schedules for remaining paments only, Hence Secval will be calculated today, for future cash flows only
+--Each month, You get loan payment schedules for remaining paments only, Hence Secval will be calculated today,for future cash flows only
 --Secvalue will not be calculated for entire payment schedule ( from first payment, which was paid in the past,  to last payment )
 --for example, for a Loan with payment terms of 60 monthly payments,  from Jan 2015 to  Dec 2020,  you get new loan schedule today (i.e. 9/30/2017 ), SecVal will be calculated for payments from Sept 2017 to Dec 2020
 --

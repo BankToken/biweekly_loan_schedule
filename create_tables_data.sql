@@ -1,5 +1,5 @@
 
-
+ 
 create table pmt_schedule 
 (id_pmt number(10)  primary key , 
  loanacctnumber varchar(20) not null,

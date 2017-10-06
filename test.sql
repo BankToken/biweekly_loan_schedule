@@ -15,7 +15,7 @@ truncate table gtt_LoanPmt_cash_flow
 truncate table process_log
 /
 
-   --adding 112 loan schedulees for calc_date of '7/31/2015'
+  --adding 112 loan schedulees for calc_date of '7/31/2015'
    
 exec pkg_secval.add_loan_schedule ( 'ACCT01_LOAN01',424.89, 14,'8/3/2015',1.7,4.108 ,'7/31/2015' ,38 );
 exec pkg_secval.add_loan_schedule ( 'ACCT01_LOAN02',428.89, 14,'8/3/2015',101.75, 4.25 ,'7/31/2015',38 );
@@ -130,18 +130,17 @@ exec pkg_secval.add_loan_schedule ( 'ACCT02_LOAN10',830.25, 14,'8/17/2015',25.89
 exec pkg_secval.add_loan_schedule ( 'ACCT03_LOAN10',830.25, 14,'8/17/2015',25.89,3.3110,'7/31/2015',21 );
 
 
+ 
 
-
---Run  one of below procedures
+-- STEP 2: Run  one of below procedures
 exec pkg_secval.calc_secval_commit_inteval('7/31/2015',15);
 
 --exec pkg_secval.calclate_secval('7/31/2015');
 
 
---Check tables
+-- STEP:3Check tables
 
 
- 
 select * from pmt_schedule order by 2,4;
 
 select * from loan_discrate order by 2,3;

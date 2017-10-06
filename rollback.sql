@@ -25,4 +25,4 @@ drop sequence id_loan_sec_val_seq ;
 drop sequence id_loan_sec_val_seq_log ;
 /
 drop table gtt_loanpmt_cash_flow cascade constraints;
-/
+/ 
