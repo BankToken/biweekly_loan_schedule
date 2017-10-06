@@ -1,14 +1,12 @@
 # biweekly_loan_schedule : Project for calculating securitization value for given loan payment schedule ( hypothetical).
 #
 ############################################### How to execute/Test ##############################################
-#																												#
-# 1) Run script @rollback.sql ( Remove, If db objects already created )											#
-# 2) @create_tables_data.sql																					#
-# 3) @pkg_secval.sql																							#
-# 4) @test.sql																									#
-#																												#
-#																												#
-#																												#
+#																				#							
+# 1) Run script @rollback.sql ( Remove, If db objects already created )											
+# 2) @create_tables_data.sql																	#				
+# 3) @pkg_secval.sql																		#					
+# 4) @test.sql																			#								
+#																				#								
 #################################################################################################################
 #
 # INFO:  The project contains four scripts.
@@ -16,10 +14,12 @@
 #
 #
 ##########(1) @create_tables_data.sql ########### 
+#
 # This script will create tables / indexes/triggers /temp table needed to serupt data model
 #
 #
 ##########(2) @pkg_secval.sql########### 
+#
 # This script will create package pkg_secval with four procedures. 
 # Assumption :
 # Each month, You get loan payment schedules for remaining paments only, Hence Secval will be calculated today,for future cash flows only
@@ -40,6 +40,7 @@
 #
 #
 ######### (3) @rollback.sql ##########
+#
 # This script will remove all datamodels , package(s). 
 #
 #

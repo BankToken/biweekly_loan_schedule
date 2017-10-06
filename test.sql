@@ -138,8 +138,9 @@ exec pkg_secval.calc_secval_commit_inteval('7/31/2015',15);
 --exec pkg_secval.calclate_secval('7/31/2015');
 
 
--- STEP:3Check tables
+-- STEP:3Check tables----
 
+select * from process_log;
 
 select * from pmt_schedule order by 2,4;
 
@@ -153,5 +154,4 @@ select * from loan_secvalue_log order by loanacctnumber , log_timestamp desc;
 
 select * from loan_discrate  where  calcperiod = to_date ('7/31/2015', 'MM/DD/YYYY') ;
 
-select * from process_log;
 
