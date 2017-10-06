@@ -1,25 +1,22 @@
- -- TEST ---
+-- TEST ---
   
-
-
-/*
+--STEP1: Clean tables before retest
  
-
-truncate table pmt_schedule
-/
-truncate table loan_discrate
+truncate table LOAN_SECVALUE
 /
 truncate table LOAN_SECVALUE_log
 /
-truncate table LoanPmt_cash_flow
+truncate table pmt_schedule
+/
+truncate table loan_discrate
 /
 truncate table gtt_LoanPmt_cash_flow
 /
 truncate table process_log
 /
---adding 110 schedulees
 
-
+   --adding 112 loan schedulees for calc_date of '7/31/2015'
+   
 exec pkg_secval.add_loan_schedule ( 'ACCT01_LOAN01',424.89, 14,'8/3/2015',1.7,4.108 ,'7/31/2015' ,38 );
 exec pkg_secval.add_loan_schedule ( 'ACCT01_LOAN02',428.89, 14,'8/3/2015',101.75, 4.25 ,'7/31/2015',38 );
 exec pkg_secval.add_loan_schedule ( 'ACCT01_LOAN03',265.75, 14,'8/3/2015',null,5.00 ,'7/31/2015',48 );
@@ -133,36 +130,29 @@ exec pkg_secval.add_loan_schedule ( 'ACCT02_LOAN10',830.25, 14,'8/17/2015',25.89
 exec pkg_secval.add_loan_schedule ( 'ACCT03_LOAN10',830.25, 14,'8/17/2015',25.89,3.3110,'7/31/2015',21 );
 
 
-exec pkg_secval.calclate_secval_gtt('7/31/2015');
-
-exec pkg_secval.calclate_secval('7/31/2015');
 
 
- select p.loanacctnumber, p.pcd_act_d,
-           --  row_number() over ( partition by p.loanacctnumber order by p.pcd_act_d ) as pmt_nbr,
-            sum (mopmt) as cash_flow
-      from PMT_SCHEDULE p , loan_discrate d
-      where p.calcperiod = to_date ('7/31/2015', 'MM/DD/YYYY')
-      and p.loanacctnumber = d.loanacctnumber
-      and  d.calcperiod = p.calcperiod
-   group by  p.loanacctnumber,  p.pcd_act_d
-   order by 1,4;
-   
+--Run  one of below procedures
+exec pkg_secval.calc_secval_commit_inteval('7/31/2015',15);
+
+--exec pkg_secval.calclate_secval('7/31/2015');
 
 
-select * from process_log
-  
-  select * from PMT_SCHEDULE ORDER BY 2,4;
-
-select * from loan_discrate ORDER BY 2,3;
-
-select * from  gtt_LoanPmt_cash_flow order by loanacctnumber, nbr_mos
-
-select * from LOAN_SECVALUE  order by loanacctnumber
-
-select * from LOAN_SECVALUE_log order by loanacctnumber , 2 desc
+--Check tables
 
 
-  
-  */
-  
+ 
+select * from pmt_schedule order by 2,4;
+
+select * from loan_discrate order by 2,3;
+
+select * from  gtt_loanpmt_cash_flow order by loanacctnumber, nbr_mos;
+
+select * from loan_secvalue  order by loanacctnumber;
+
+select * from loan_secvalue_log order by loanacctnumber , log_timestamp desc;
+
+select * from loan_discrate  where  calcperiod = to_date ('7/31/2015', 'MM/DD/YYYY') ;
+
+select * from process_log;
+
